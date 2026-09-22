@@ -28,3 +28,8 @@ footer{background:var(--green);color:var(--cream);padding:1.5rem max(5vw,1.2rem)
 .memory-card{border-color:var(--trait-color);box-shadow:0 18px 45px rgba(0,47,41,.2)}
 .memory-card::before{opacity:.34;filter:saturate(1.15) contrast(1.05)}
 .card-national-slogan{width:min(62%,340px)}
+
+
+.name-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }\n.name-label-row .anon { margin: 0; }\n
+
+.name-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }\n.name-label-row .anon { margin: 0; }\n

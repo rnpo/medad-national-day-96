@@ -99,9 +99,10 @@ export default function Home() {
       const data = await response.json() as { memory: Memory; error?: string };
       if (!response.ok) throw new Error(data.error);
       setMemories((current) => [data.memory, ...current].slice(0, 100));
+      await downloadCard();
       setMessage("");
       setWallError("");
-      notify("تمت إضافة بصمتك إلى الجدار العام");
+      
     } catch (error) {
       setWallError(error instanceof Error ? error.message : "تعذر حفظ بصمتك الآن.");
     } finally { setSaving(false); }
@@ -138,12 +139,12 @@ export default function Home() {
       const filename = "بصمتي-لليوم-الوطني-96.png";
       const file = new File([blob], filename, { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: "بطاقتي لليوم الوطني السعودي 96" }); notify("تم إرسال البطاقة إلى خيار الحفظ الذي اخترتِه"); return; }
+        try { await navigator.share({ files: [file], title: "بطاقتي لليوم الوطني السعودي 96" }); notify("تم حفظ بطاقتك وإضافة بصمتك إلى الجدار العام"); return; }
         catch (error) { if (error instanceof DOMException && error.name === "AbortError") return; }
       }
       const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
       anchor.href = url; anchor.download = filename; document.body.appendChild(anchor); anchor.click(); anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 15000); notify("تم تنزيل البطاقة على جهازك");
+      window.setTimeout(() => URL.revokeObjectURL(url), 15000); notify("تم حفظ بطاقتك وإضافة بصمتك إلى الجدار العام");
     } catch { notify("تعذر حفظ الصورة؛ حاولي مرة أخرى"); }
     finally { setDownloading(false); }
   }
@@ -169,9 +170,9 @@ export default function Home() {
 
         <section className="quiz-wrap"><div className="section-head"><h2>اختبر معرفتك</h2><p>ثلاثة أسئلة خفيفة عن قيم الهوية ودور طالب الصيدلة.</p></div><div className="quiz"><div className="progress" aria-hidden="true"><span style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>{quizDone ? <div className="quiz-result"><p>{score === 3 ? "ممتاز! قيم الوطن حاضرة فيك." : score === 2 ? "جميل جدًا! تعرف قيم الهوية جيدًا." : "بداية جميلة، أعد التجربة واكتشف القيم أكثر."}</p><button className="option" type="button" onClick={restartQuiz}>إعادة الاختبار</button></div> : <><p className="quiz-question">{questionIndex + 1}. {questions[questionIndex].q}</p><div className="options">{questions[questionIndex].a.map((option, index) => <button type="button" key={option} disabled={answerIndex !== null} onClick={() => answer(index)} className={`option ${answerIndex === index ? (index === questions[questionIndex].c ? "correct" : "wrong") : ""} ${answerIndex !== null && index === questions[questionIndex].c ? "correct" : ""}`}>{option}</button>)}</div></>}</div></section>
 
-        <section className="fingerprint-section" id="fingerprint"><div className="section-head"><h2>اترك بصمتك للوطن</h2><p>اكتب كلمتك، واختر نقشًا يمثل بصمتك، ثم احتفظ ببطاقتك.</p></div><div className="fingerprint-layout">
-          <form className="form-card" onSubmit={submitMemory}><label htmlFor="name">الاسم الأول أو اللقب</label><input id="name" maxLength={30} value={name} onChange={(event) => setName(event.target.value)} placeholder="مثال: رغد" /><label htmlFor="message">أثرك أو كلمتك للوطن</label><textarea id="message" maxLength={180} required value={message} onChange={(event) => setMessage(event.target.value)} placeholder="أطمح أن أترك أثرًا صحيًا يخدم مجتمعي ووطننا..." /><div className="count">{message.length}/180</div><label>اختر بصمتك الرقمية</label><div className="motifs" aria-label="اختيار البصمة الرقمية">{traits.map((trait) => <button type="button" className="motif" key={trait.key} style={{ "--motif-color": trait.color } as CSSProperties} aria-label={trait.title} aria-pressed={selected.key === trait.key} onClick={() => setSelected(trait)}><img src={`/assets/${trait.image}`} alt="" /></button>)}</div><label className="anon"><input type="checkbox" checked={anonymous} onChange={(event) => setAnonymous(event.target.checked)} /> نشر البطاقة دون اسم</label><button className="primary" type="submit" disabled={saving}>{saving ? "جارٍ إضافة بصمتك…" : "أضف بصمتك للجدار العام"}</button></form>
-          <div className="preview-card"><div className="memory-card" style={cardStyle}><div className="memory-head"><span className="selected-trait"><img src={`/assets/${selected.image}`} alt="" /><span>{selected.title}</span></span><span className="memory-club"><img src="/assets/medad-logo.png" alt="" /><span>نادي مداد الصيدلة</span></span></div><div className="memory-copy"><img className="card-national-slogan" src="/assets/national-slogan.png" alt="عزّنا بطبعنا" /><blockquote>«{displayMessage}»</blockquote><cite>— {displayName}</cite></div><div className="memory-foot">كلية الصيدلة · جامعة نجران</div></div><button className="download" type="button" onClick={downloadCard} disabled={downloading}>{downloading ? "جارٍ تجهيز البطاقة…" : "حفظ البطاقة على جهازك"}</button></div>
+        <section className="fingerprint-section" id="fingerprint"><div className="section-head"><h2>اترك بصمتك للوطن</h2><p>اكتب كلمتك واختر نقشًا يمثل بصمتك؛ سنحفظ بطاقتك ونضيفها إلى الجدار بخطوة واحدة.</p></div><div className="fingerprint-layout">
+          <form className="form-card" onSubmit={submitMemory}><div className="name-label-row"><label htmlFor="name">الاسم الأول أو اللقب</label><label className="anon"><input type="checkbox" checked={anonymous} onChange={(event) => setAnonymous(event.target.checked)} /> نشر دون اسم</label></div><input id="name" maxLength={30} value={name} onChange={(event) => setName(event.target.value)} placeholder="مثال: رغد" /><label htmlFor="message">أثرك أو كلمتك للوطن</label><textarea id="message" maxLength={180} required value={message} onChange={(event) => setMessage(event.target.value)} placeholder="أطمح أن أترك أثرًا صحيًا يخدم مجتمعي ووطننا..." /><div className="count">{message.length}/180</div><label>اختر بصمتك الرقمية</label><div className="motifs" aria-label="اختيار البصمة الرقمية">{traits.map((trait) => <button type="button" className="motif" key={trait.key} style={{ "--motif-color": trait.color } as CSSProperties} aria-label={trait.title} aria-pressed={selected.key === trait.key} onClick={() => setSelected(trait)}><img src={`/assets/${trait.image}`} alt="" /></button>)}</div><button className="primary" type="submit" disabled={saving}>{saving ? "جارٍ حفظ بطاقتك وإضافة بصمتك…" : "حفظ البطاقة وإضافة البصمة"}</button></form>
+          <div className="preview-card"><div className="memory-card" style={cardStyle}><div className="memory-head"><span className="selected-trait"><img src={`/assets/${selected.image}`} alt="" /><span>{selected.title}</span></span><span className="memory-club"><img src="/assets/medad-logo.png" alt="" /><span>نادي مداد الصيدلة</span></span></div><div className="memory-copy"><img className="card-national-slogan" src="/assets/national-slogan.png" alt="عزّنا بطبعنا" /><blockquote>«{displayMessage}»</blockquote><cite>— {displayName}</cite></div><div className="memory-foot">كلية الصيدلة · جامعة نجران</div></div></div>
         </div>
           <div className="wall"><div className="wall-heading"><div><h3>جدار البصمات</h3><p className="wall-note">كل بصمة تُحفظ هنا وتظهر لجميع زوار الموقع.</p></div><span className="live-badge">جدار عام</span></div>{wallError && <p className="wall-error" role="alert">{wallError}</p>}{wallLoading ? <div className="wall-empty">جارٍ تحميل البصمات…</div> : memories.length === 0 ? <div className="wall-empty">كُن أول من يترك بصمته للوطن.</div> : <div className="wall-grid">{memories.map((memory) => <article className="wall-item" key={memory.id} style={{ borderColor: memory.color }}><span className="wall-trait">{memory.traitTitle}</span><p>{memory.message}</p><small>— {memory.name}</small></article>)}</div>}</div>
         </section>
